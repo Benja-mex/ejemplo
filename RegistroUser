@@ -1,0 +1,84 @@
+package com.normich.recepcion.ui
+
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
+import com.normich.recepcion.databinding.ActivityRegistroUserBinding
+import com.normich.recepcion.firebase.models.AUTH
+import com.normich.recepcion.firebase.models.UserFirebase
+import com.normich.recepcion.utilidades.loadUrl
+
+class RegistroUser : AppCompatActivity() {
+
+    private lateinit var binding: ActivityRegistroUserBinding
+    private var urlPhoto: Uri? = null
+    private val response =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                urlPhoto = result.data?.data
+                binding.content.imgProfilePreview.loadUrl(url = urlPhoto.toString(), circle = true)
+            }
+        }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = ActivityRegistroUserBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        oncliks()
+    }
+
+    private fun oncliks() {
+        with(binding.content){
+            btnImgProfile.setOnClickListener {
+                val intent =
+                    Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                response.launch(intent)
+            }
+            btnCancelar.setOnClickListener {
+                AUTH.User().cerrasession()
+                finish()
+            }
+            btnSave.setOnClickListener {
+                val user = UserFirebase(
+                    id = AUTH.User().auth.currentUser!!.uid,
+                    name = etName.text.toString(),
+                    phone = etPhone.text.toString(),
+                    email = etEmail.text.toString(),
+                    ciudad = etCiudad.text.toString(),
+                    estado = etState.text.toString(),
+                    token = ""
+                )
+                ocultar()
+                AUTH.User().registrerUser(urlPhoto,user,this@RegistroUser,binding)
+
+            }
+
+        }
+    }
+    private fun ocultar(){
+        with(binding.content){
+            tvSubtitleDatosGenerales.visibility = View.GONE
+            tvSubtitlePhoto.visibility = View.GONE
+            tvTitle.visibility = View.GONE
+            tilCiudad.visibility = View.GONE
+            tilEmail.visibility = View.GONE
+            tilState.visibility = View.GONE
+            tilName.visibility = View.GONE
+            tilPhone.visibility = View.GONE
+            dividerDatosGenerales.visibility = View.GONE
+            dividerPhoto.visibility = View.GONE
+            imgProfilePreview.visibility= View.GONE
+            btnSave.visibility=View.GONE
+            btnCancelar.visibility=View.GONE
+            btnImgProfile.visibility=View.GONE
+            progressBar.visibility = View.VISIBLE
+            tvProgress.visibility = View.VISIBLE
+        }
+    }
+
+}
